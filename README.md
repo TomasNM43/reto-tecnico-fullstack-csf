@@ -98,6 +98,22 @@ La tasa del IGV (`0.18`) y el factor del precio de venta (`1.35`) están en la s
 
 Igual que Compras, usa Facades: `IProductosFacade` (precio de venta) e `IMovimientosFacade` (stock actual y movimiento de Salida). La de movimientos también va envuelta en el Decorator de logging. La tasa del IGV está en la sección `Negocio` del `appsettings.json`.
 
+## API Gateway
+
+`ApiGateway` (YARP, puerto 5100 en desarrollo) es el punto de entrada para el frontend. Las rutas y los destinos están en la sección `ReverseProxy` de su `appsettings.json`:
+
+| Ruta | Servicio | Requiere token |
+|---|---|---|
+| `/api/auth/login` | Auth (5101) | no, con límite de 5 por minuto |
+| `/api/productos/**` | Productos (5102) | sí |
+| `/api/kardex/**` | Movimientos (5103) | sí |
+| `/api/compras/**` | Compras (5104) | sí |
+| `/api/ventas/**` | Ventas (5105) | sí |
+
+El gateway valida el JWT, aplica el rate limit y es el único que responde CORS: quita la cabecera `Origin` antes de reenviar para que los servicios no repitan las cabeceras CORS. El registro de movimientos (`POST /api/movimientos`) es interno y no se expone por el gateway.
+
+Los puertos de desarrollo ya están fijados en los `launchSettings.json`, así que cada servicio se puede levantar con `dotnet run --project <ruta> --launch-profile http`.
+
 ## Compilar el backend
 
 ```powershell
