@@ -1,9 +1,11 @@
 using BuildingBlocks;
+using Compras.Service.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Registro de servicios en el contenedor de dependencias.
 builder.Services.AddControllers();
+builder.Services.AddComprasServices(builder.Configuration);
 builder.AddBuildingBlocks("Compras Service");
 
 var app = builder.Build();

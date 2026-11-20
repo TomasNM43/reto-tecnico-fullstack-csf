@@ -84,6 +84,14 @@ La cadena de conexión está en `ConnectionStrings:Default` del `appsettings.jso
 
 Movimientos consulta a Productos por HTTP a través de una Facade (`IProductosFacade`) y reenvía el JWT del usuario. La URL está en `Services:Productos` del `appsettings.json`.
 
+## Compras
+
+`Compras.Service` (puerto 5104 en desarrollo): `GET /api/compras` y `POST /api/compras`.
+
+Para registrar una compra llama a dos servicios a través de Facades: `IProductosFacade` (actualiza el costo y el precio de venta del producto) e `IMovimientosFacade` (registra la entrada). La Facade de movimientos va envuelta en un Decorator que deja en el log cada llamada.
+
+La tasa del IGV (`0.18`) y el factor del precio de venta (`1.35`) están en la sección `Negocio` del `appsettings.json`.
+
 ## Compilar el backend
 
 ```powershell
