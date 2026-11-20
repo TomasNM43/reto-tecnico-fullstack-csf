@@ -92,6 +92,12 @@ Para registrar una compra llama a dos servicios a través de Facades: `IProducto
 
 La tasa del IGV (`0.18`) y el factor del precio de venta (`1.35`) están en la sección `Negocio` del `appsettings.json`.
 
+## Ventas
+
+`Ventas.Service` (puerto 5105 en desarrollo): `GET /api/ventas` y `POST /api/ventas`. El precio de cada producto no viaja en la petición, se toma del `PrecioVenta` del producto.
+
+Igual que Compras, usa Facades: `IProductosFacade` (precio de venta) e `IMovimientosFacade` (stock actual y movimiento de Salida). La de movimientos también va envuelta en el Decorator de logging. La tasa del IGV está en la sección `Negocio` del `appsettings.json`.
+
 ## Compilar el backend
 
 ```powershell
