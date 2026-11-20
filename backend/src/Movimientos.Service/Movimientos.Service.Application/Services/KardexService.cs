@@ -14,15 +14,25 @@ public class KardexService : IKardexService
         _productos = productos;
     }
 
-    public Task<IReadOnlyList<KardexItemDto>> ListarKardexAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<KardexItemDto>> ListarKardexAsync(CancellationToken ct = default)
     {
-        // TODO(USUARIO): armar la tabla del Kardex con un renglón por producto y su stock actual.
-        // REGLA: cada fila muestra Id_producto, nombre_producto, stock_actual, costo y precio de venta;
-        //        el stock sale de los movimientos (Entradas suman, Salidas restan).
-        // PISTA: _productos.ListarAsync() trae los productos (nombre, costo, precio);
-        //        _movimientos.ListarTodosAsync() trae todos los movimientos, agrúpalos por IdProducto
-        //        para calcular el stock de cada uno y combínalos en KardexItemDto.
-        throw new NotImplementedException();
+        var productos = await _productos.ListarAsync(ct);
+        var movimientos = await _movimientos.ListarTodosAsync(ct);
+
+        // Un solo recorrido de los movimientos: el stock de cada producto sale de agruparlos por producto.
+        var stockPorProducto = movimientos
+            .GroupBy(m => m.IdProducto)
+            .ToDictionary(g => g.Key, g => CalculoStock.Calcular(g));
+
+        return productos
+            .OrderBy(p => p.IdProducto)
+            .Select(p => new KardexItemDto(
+                p.IdProducto,
+                p.NombreProducto,
+                stockPorProducto.GetValueOrDefault(p.IdProducto),
+                p.Costo,
+                p.PrecioVenta))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<MovimientoProductoDto>> ListarMovimientosAsync(int idProducto, CancellationToken ct = default)

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Clínica San Felipe - API",
-    "description": "Colección de pruebas del reto técnico. Todas las peticiones pasan por el API Gateway ({{baseUrl}}).\n\nOrden sugerido: 1) Auth > Login (guarda el token), 2) el resto de carpetas.\n\nLas peticiones que dependen de lógica de negocio (Registrar Compra, Registrar Venta, Listar Kardex y Stock) responden 501 mientras esa lógica no esté implementada.",
+    "description": "Colección de pruebas del reto técnico. Todas las peticiones pasan por el API Gateway ({{baseUrl}}).\n\nOrden sugerido: 1) Auth > Login (guarda el token), 2) el resto de carpetas en secuencia: la compra deja stock del producto y la venta lo usa.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -214,8 +214,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 200 (501 si falta implementar el Kardex)', function () { pm.response.to.have.status(200); });",
-                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('Cada renglón trae su stock actual', function () {",
+                  "    pm.response.json().forEach(function (item) { pm.expect(item.stockActual).to.be.a('number'); });",
+                  "});"
                 ]
               }
             }
@@ -264,7 +267,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status 200 (501 si falta implementar el stock)', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
                   "pm.test('Devuelve un número', function () { pm.expect(pm.response.json()).to.be.a('number'); });"
                 ]
               }
@@ -293,7 +296,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Compra creada (201) (501 si falta implementar la lógica)', function () { pm.response.to.have.status(201); });"
+                  "pm.test('Compra creada (201)', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Los importes cuadran (IGV sobre el subtotal)', function () {",
+                  "    const compra = pm.response.json();",
+                  "    pm.expect(compra.subTotal).to.eql(200);",
+                  "    pm.expect(compra.igv).to.eql(36);",
+                  "    pm.expect(compra.total).to.eql(236);",
+                  "});"
                 ]
               }
             }
@@ -374,7 +383,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Venta creada (201) (501 si falta implementar la lógica)', function () { pm.response.to.have.status(201); });"
+                  "pm.test('Venta creada (201)', function () { pm.response.to.have.status(201); });"
                 ]
               }
             }

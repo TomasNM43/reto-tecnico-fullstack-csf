@@ -35,8 +35,6 @@ public class GlobalExceptionMiddleware
     {
         var (status, title, detail) = ex switch
         {
-            // Mientras la lógica de negocio esté pendiente, se avisa claramente.
-            NotImplementedException => (HttpStatusCode.NotImplemented, "Lógica pendiente", "Esta operación aún no está implementada."),
             ReglaNegocioException => (HttpStatusCode.BadRequest, "Regla de negocio incumplida", ex.Message),
             ArgumentException => (HttpStatusCode.BadRequest, "Solicitud inválida", ex.Message),
             KeyNotFoundException => (HttpStatusCode.NotFound, "No encontrado", ex.Message),

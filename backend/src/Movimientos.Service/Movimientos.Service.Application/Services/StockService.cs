@@ -8,12 +8,9 @@ public class StockService : IStockService
 
     public StockService(IMovimientoRepository movimientos) => _movimientos = movimientos;
 
-    public Task<int> ObtenerStockAsync(int idProducto, CancellationToken ct = default)
+    public async Task<int> ObtenerStockAsync(int idProducto, CancellationToken ct = default)
     {
-        // TODO(USUARIO): calcular el stock actual del producto a partir de sus movimientos.
-        // REGLA: el stock se calcula desde los movimientos: Entradas suman y Salidas restan.
-        // PISTA: _movimientos.ListarPorProductoAsync(idProducto) devuelve los movimientos del producto;
-        //        recorre la lista y acumula según Tipo (TipoMovimiento.Entrada / TipoMovimiento.Salida).
-        throw new NotImplementedException();
+        var movimientos = await _movimientos.ListarPorProductoAsync(idProducto, ct);
+        return CalculoStock.Calcular(movimientos);
     }
 }

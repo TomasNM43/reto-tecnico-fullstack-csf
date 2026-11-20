@@ -1,0 +1,62 @@
+<div class="modal-backdrop fade show"></div>
+
+<div
+  class="modal fade show d-block"
+  tabindex="-1"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="tituloModalMovimientos"
+  (click)="cerrar()"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="tituloModalMovimientos">Movimientos: {{ producto().nombreProducto }}</h2>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrar()"></button>
+      </div>
+
+      <div class="modal-body">
+        @if (cargando()) {
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status" aria-label="Cargando movimientos"></div>
+          </div>
+        } @else if (error(); as mensaje) {
+          <div class="alert alert-danger mb-0" role="alert">{{ mensaje }}</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Fecha de registro</th>
+                  <th>Tipo de movimiento</th>
+                  <th class="text-end">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of filas(); track $index) {
+                  <tr>
+                    <td>{{ fila.fecha }}</td>
+                    <td>
+                      <span class="badge" [class.text-bg-success]="fila.esEntrada" [class.text-bg-danger]="!fila.esEntrada">
+                        {{ fila.tipo }}
+                      </span>
+                    </td>
+                    <td class="text-end">{{ fila.cantidad }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-3">Este producto todavía no tiene movimientos.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrar()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

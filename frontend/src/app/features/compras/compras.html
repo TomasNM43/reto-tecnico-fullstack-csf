@@ -1,0 +1,154 @@
+<h1 class="h3 mb-3">Compras</h1>
+
+@if (exito(); as mensaje) {
+  <div class="alert alert-success" role="status">{{ mensaje }}</div>
+}
+@if (error(); as mensaje) {
+  <div class="alert alert-danger" role="alert">{{ mensaje }}</div>
+}
+
+<form class="card shadow-sm mb-4" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <span class="fw-semibold">Nueva compra</span>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="abrirModalProducto()">
+        ¿No existe el producto? Registrarlo
+      </button>
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="agregarFila()">
+        + Agregar producto
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th style="min-width: 220px">Producto</th>
+            <th style="min-width: 110px">Cantidad</th>
+            <th style="min-width: 130px">Precio de compra</th>
+            <th class="text-end">Subtotal</th>
+            <th class="text-end">IGV</th>
+            <th class="text-end">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of detalles.controls; track $index; let i = $index) {
+            <tr [formGroup]="fila">
+              <td>
+                <select
+                  class="form-select"
+                  formControlName="idProducto"
+                  aria-label="Producto"
+                  [class.is-invalid]="fila.controls.idProducto.touched && fila.controls.idProducto.invalid"
+                >
+                  <option [ngValue]="null">Selecciona un producto</option>
+                  @for (p of productos(); track p.idProducto) {
+                    <option [ngValue]="p.idProducto">{{ p.nombreProducto }} (lote {{ p.nroLote }})</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  class="form-control"
+                  formControlName="cantidad"
+                  aria-label="Cantidad"
+                  [class.is-invalid]="fila.controls.cantidad.touched && fila.controls.cantidad.invalid"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  class="form-control"
+                  formControlName="precio"
+                  aria-label="Precio de compra"
+                  [class.is-invalid]="fila.controls.precio.touched && fila.controls.precio.invalid"
+                />
+              </td>
+              @let linea = calculo().lineas[i];
+              <td class="text-end">{{ linea?.subTotal | currency: 'PEN' : 'S/ ' }}</td>
+              <td class="text-end">{{ linea?.igv | currency: 'PEN' : 'S/ ' }}</td>
+              <td class="text-end">{{ linea?.total | currency: 'PEN' : 'S/ ' }}</td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  aria-label="Quitar producto"
+                  [disabled]="detalles.length === 1"
+                  (click)="quitarFila(i)"
+                >
+                  Quitar
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row justify-content-end">
+      <div class="col-12 col-md-5 col-lg-4">
+        <dl class="row mb-0">
+          <dt class="col-6">Subtotal</dt>
+          <dd class="col-6 text-end">{{ calculo().totales.subTotal | currency: 'PEN' : 'S/ ' }}</dd>
+          <dt class="col-6">IGV</dt>
+          <dd class="col-6 text-end">{{ calculo().totales.igv | currency: 'PEN' : 'S/ ' }}</dd>
+          <dt class="col-6 fs-5">Total</dt>
+          <dd class="col-6 text-end fs-5 fw-semibold">{{ calculo().totales.total | currency: 'PEN' : 'S/ ' }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer text-end">
+    <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+      @if (guardando()) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
+      Registrar compra
+    </button>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold">Compras registradas</div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Fecha</th>
+          <th class="text-end">Subtotal</th>
+          <th class="text-end">IGV</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of compras(); track c.idCompraCab) {
+          <tr>
+            <td>{{ c.idCompraCab }}</td>
+            <td>{{ c.fecRegistro | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-end">{{ c.subTotal | currency: 'PEN' : 'S/ ' }}</td>
+            <td class="text-end">{{ c.igv | currency: 'PEN' : 'S/ ' }}</td>
+            <td class="text-end">{{ c.total | currency: 'PEN' : 'S/ ' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="text-center text-muted py-3">Todavía no hay compras registradas.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (modalProductoAbierto()) {
+  <app-producto-modal (cerrado)="cerrarModalProducto()" (registrado)="alRegistrarProducto($event)" />
+}

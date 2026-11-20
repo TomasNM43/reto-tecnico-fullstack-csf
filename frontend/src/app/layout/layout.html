@@ -1,0 +1,38 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-semibold" routerLink="/">Clínica San Felipe</a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      aria-label="Abrir menú"
+      [attr.aria-expanded]="menuAbierto()"
+      (click)="alternarMenu()"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="navbar-collapse collapse" [class.show]="menuAbierto()">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/compras" routerLinkActive="active" (click)="cerrarMenu()">Compras</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/ventas" routerLinkActive="active" (click)="cerrarMenu()">Ventas</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/kardex" routerLinkActive="active" (click)="cerrarMenu()">Kardex</a>
+        </li>
+      </ul>
+
+      <div class="d-flex align-items-center gap-3 text-white">
+        <span class="small">{{ auth.usuario() }}</span>
+        <button type="button" class="btn btn-outline-light btn-sm" (click)="salir()">Salir</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  <router-outlet />
+</main>

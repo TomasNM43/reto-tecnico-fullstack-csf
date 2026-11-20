@@ -1,0 +1,91 @@
+<div class="modal-backdrop fade show"></div>
+
+<div
+  class="modal fade show d-block"
+  tabindex="-1"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="tituloModalProducto"
+  (click)="cerrar()"
+>
+  <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="tituloModalProducto">Registrar producto</h2>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrar()"></button>
+      </div>
+
+      <div class="modal-body">
+        @if (error(); as mensaje) {
+          <div class="alert alert-danger py-2" role="alert">{{ mensaje }}</div>
+        }
+
+        <div class="mb-3">
+          <label for="pm-nombre" class="form-label">Nombre del producto</label>
+          <input
+            id="pm-nombre"
+            type="text"
+            class="form-control"
+            formControlName="nombreProducto"
+            [class.is-invalid]="form.controls.nombreProducto.touched && form.controls.nombreProducto.invalid"
+          />
+          <div class="invalid-feedback">Ingresa el nombre (máximo 150 caracteres).</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="pm-lote" class="form-label">Número de lote</label>
+          <input
+            id="pm-lote"
+            type="text"
+            class="form-control"
+            formControlName="nroLote"
+            [class.is-invalid]="form.controls.nroLote.touched && form.controls.nroLote.invalid"
+          />
+          <div class="invalid-feedback">Ingresa el lote (máximo 50 caracteres).</div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-6">
+            <label for="pm-costo" class="form-label">Costo</label>
+            <input
+              id="pm-costo"
+              type="number"
+              min="0"
+              step="0.01"
+              class="form-control"
+              formControlName="costo"
+              [class.is-invalid]="form.controls.costo.touched && form.controls.costo.invalid"
+            />
+            <div class="invalid-feedback">No puede ser negativo.</div>
+          </div>
+          <div class="col-6">
+            <label for="pm-precio" class="form-label">Precio de venta</label>
+            <input
+              id="pm-precio"
+              type="number"
+              min="0"
+              step="0.01"
+              class="form-control"
+              formControlName="precioVenta"
+              [class.is-invalid]="form.controls.precioVenta.touched && form.controls.precioVenta.invalid"
+            />
+            <div class="invalid-feedback">No puede ser negativo.</div>
+          </div>
+        </div>
+        <div class="form-text mt-2">Puedes dejar el costo y el precio en 0: se actualizan al registrar la compra.</div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando()">
+          @if (guardando()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          Registrar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

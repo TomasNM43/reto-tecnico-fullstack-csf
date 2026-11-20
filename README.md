@@ -151,7 +151,41 @@ También se puede correr desde consola con Newman:
 npx newman run backend\postman\ClinicaSanFelipe.postman_collection.json -e backend\postman\ClinicaSanFelipe.local.postman_environment.json
 ```
 
-Las peticiones de Registrar Compra, Registrar Venta, Listar Kardex y Stock fallan con 501 mientras esa lógica de negocio no esté implementada.
+Las carpetas están en este orden a propósito: la compra deja stock del producto y la venta lo usa, así que conviene ejecutarlas en secuencia.
+
+## Frontend
+
+La aplicación Angular está en `frontend` (detalles en [frontend/README.md](./frontend/README.md)). Con el backend arriba (por ejemplo con `docker compose up -d --build`):
+
+```powershell
+cd frontend
+npm install
+npm start
+```
+
+Se abre en `http://localhost:4200`. Entra con `admin` / `Admin123*`. La sesión se guarda en el navegador solo mientras la pestaña esté abierta; si el token vence o el servidor responde 401, se vuelve al login.
+
+## Pruebas
+
+Backend (xUnit y NSubstitute), desde `backend`:
+
+```powershell
+dotnet test tests\ClinicaSanFelipe.Tests
+```
+
+Las pruebas están agrupadas por tema en `backend/tests/ClinicaSanFelipe.Tests`:
+
+- `Autenticacion`: el login, la expiración de 30 minutos del JWT y el hash de la contraseña.
+- `Catalogo`: registrar y actualizar productos.
+- `Inventario`: el registro de movimientos.
+- `Transversal`: la conversión de excepciones a códigos HTTP.
+- `Negocio`: las reglas de compras (importes, costo y precio de venta, movimiento de entrada), ventas (validación de stock, importes, movimiento de salida), stock y Kardex.
+
+Frontend, desde `frontend`:
+
+```powershell
+npm test -- --watch=false
+```
 
 ## Compilar el backend
 
