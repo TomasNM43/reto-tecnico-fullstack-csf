@@ -114,6 +114,28 @@ El gateway valida el JWT, aplica el rate limit y es el único que responde CORS:
 
 Los puertos de desarrollo ya están fijados en los `launchSettings.json`, así que cada servicio se puede levantar con `dotnet run --project <ruta> --launch-profile http`.
 
+## Ejecutar con Docker
+
+Es la forma más simple de levantar todo. Se necesita Docker con Compose. Desde la raíz del repositorio:
+
+```powershell
+docker compose up -d --build
+```
+
+Esto construye las imágenes de los servicios y del gateway, levanta PostgreSQL y carga solos los scripts de `backend/database` (tablas, funciones y datos de prueba) la primera vez que se crea la base. Solo el gateway (`http://localhost:5100`) y la base de datos (puerto `54320`) quedan expuestos; los microservicios se hablan entre sí por la red interna de Docker.
+
+Probar el login y un listado:
+
+```powershell
+$g='http://localhost:5100'
+$login = Invoke-RestMethod -Method POST "$g/api/auth/login" -ContentType 'application/json' -Body '{"username":"admin","password":"Admin123*"}'
+Invoke-RestMethod "$g/api/productos" -Headers @{ Authorization = "Bearer $($login.token)" }
+```
+
+Para detener todo: `docker compose down`. Si además quieres borrar los datos de la base: `docker compose down -v`. Si cambias los scripts SQL, hay que borrar el volumen para que se vuelvan a ejecutar.
+
+Los puertos, la clave del JWT y la contraseña de la base se pueden cambiar con variables de entorno o con un archivo `.env` (hay un ejemplo en `.env.example`). Si el puerto 5100 o el 54320 ya están ocupados en tu equipo, cambia `GATEWAY_PORT` o `DB_PORT`. En este modo los servicios corren en `Production`, así que Swagger no está disponible; para verlo, ejecuta los servicios con `dotnet run` como se explica más arriba.
+
 ## Compilar el backend
 
 ```powershell

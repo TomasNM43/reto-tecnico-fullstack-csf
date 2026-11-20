@@ -1,0 +1,104 @@
+# Levanta la base de datos, los 5 microservicios y el API Gateway.
+# Solo el gateway y la base de datos se publican hacia el equipo; los servicios quedan en la red interna.
+name: clinica-san-felipe
+
+x-servicio: &servicio
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+  environment: &entorno
+    ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+    ConnectionStrings__Default: Host=db;Port=5432;Database=clinica;Username=postgres;Password=${DB_PASSWORD:-postgres}
+    Jwt__Key: ${JWT_KEY:-clave-solo-para-desarrollo-cambiala-en-un-entorno-real-123456}
+    # Los servicios solo reciben tráfico del gateway, que ya limita por cliente.
+    # Se sube su límite porque todas las peticiones les llegan desde la misma IP interna.
+    RateLimit__PermitLimit: "1000"
+    RateLimit__LoginPermitLimit: "100"
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clinica
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-54320}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Los .sql de esta carpeta se ejecutan en orden la primera vez que se crea la base.
+      - ./backend/database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clinica"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth:
+    <<: *servicio
+    build:
+      context: ./backend
+      dockerfile: src/Auth.Service/Dockerfile
+
+  productos:
+    <<: *servicio
+    build:
+      context: ./backend
+      dockerfile: src/Productos.Service/Dockerfile
+
+  movimientos:
+    <<: *servicio
+    build:
+      context: ./backend
+      dockerfile: src/Movimientos.Service/Dockerfile
+    environment:
+      <<: *entorno
+      Services__Productos: http://productos:8080
+
+  compras:
+    <<: *servicio
+    build:
+      context: ./backend
+      dockerfile: src/Compras.Service/Dockerfile
+    environment:
+      <<: *entorno
+      Services__Productos: http://productos:8080
+      Services__Movimientos: http://movimientos:8080
+
+  ventas:
+    <<: *servicio
+    build:
+      context: ./backend
+      dockerfile: src/Ventas.Service/Dockerfile
+    environment:
+      <<: *entorno
+      Services__Productos: http://productos:8080
+      Services__Movimientos: http://movimientos:8080
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: src/ApiGateway/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - productos
+      - movimientos
+      - compras
+      - ventas
+    ports:
+      - "${GATEWAY_PORT:-5100}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      Jwt__Key: ${JWT_KEY:-clave-solo-para-desarrollo-cambiala-en-un-entorno-real-123456}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:4200}
+      ReverseProxy__Clusters__auth__Destinations__d1__Address: http://auth:8080
+      ReverseProxy__Clusters__productos__Destinations__d1__Address: http://productos:8080
+      ReverseProxy__Clusters__movimientos__Destinations__d1__Address: http://movimientos:8080
+      ReverseProxy__Clusters__compras__Destinations__d1__Address: http://compras:8080
+      ReverseProxy__Clusters__ventas__Destinations__d1__Address: http://ventas:8080
+
+volumes:
+  db-data:
