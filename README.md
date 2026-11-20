@@ -136,6 +136,23 @@ Para detener todo: `docker compose down`. Si además quieres borrar los datos de
 
 Los puertos, la clave del JWT y la contraseña de la base se pueden cambiar con variables de entorno o con un archivo `.env` (hay un ejemplo en `.env.example`). Si el puerto 5100 o el 54320 ya están ocupados en tu equipo, cambia `GATEWAY_PORT` o `DB_PORT`. En este modo los servicios corren en `Production`, así que Swagger no está disponible; para verlo, ejecuta los servicios con `dotnet run` como se explica más arriba.
 
+## Colección de Postman
+
+En `backend/postman` hay una colección y un environment para importar en Postman:
+
+- `ClinicaSanFelipe.postman_collection.json`
+- `ClinicaSanFelipe.local.postman_environment.json`
+
+Elige el environment "Clínica San Felipe - Local" (apunta al gateway, `http://localhost:5100`) y ejecuta primero `0. Auth > Login`: un script guarda el JWT en la variable `token` y el resto de las peticiones lo usan solo. Cada petición trae sus pruebas, y la carpeta `5. Seguridad` revisa el 401 sin token, las cabeceras y que `/api/movimientos` no esté publicado.
+
+También se puede correr desde consola con Newman:
+
+```powershell
+npx newman run backend\postman\ClinicaSanFelipe.postman_collection.json -e backend\postman\ClinicaSanFelipe.local.postman_environment.json
+```
+
+Las peticiones de Registrar Compra, Registrar Venta, Listar Kardex y Stock fallan con 501 mientras esa lógica de negocio no esté implementada.
+
 ## Compilar el backend
 
 ```powershell

@@ -1,0 +1,557 @@
+{
+  "info": {
+    "name": "Clínica San Felipe - API",
+    "description": "Colección de pruebas del reto técnico. Todas las peticiones pasan por el API Gateway ({{baseUrl}}).\n\nOrden sugerido: 1) Auth > Login (guarda el token), 2) el resto de carpetas.\n\nLas peticiones que dependen de lógica de negocio (Registrar Compra, Registrar Venta, Listar Kardex y Stock) responden 501 mientras esa lógica no esté implementada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "0. Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login correcto (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Guarda el JWT en el environment para que lo usen las demás peticiones.",
+                  "if (pm.response.code === 200) {",
+                  "    const datos = pm.response.json();",
+                  "    pm.environment.set('token', datos.token);",
+                  "    pm.test('El token se guardó en el environment', function () {",
+                  "        pm.expect(pm.environment.get('token')).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "Devuelve un JWT válido por 30 minutos. El script de test lo guarda en la variable de entorno `token`."
+          }
+        },
+        {
+          "name": "Login con clave incorrecta (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Credenciales inválidas (401)', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"clave-incorrecta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "auth", "login" ]
+            },
+            "description": "El login tiene un límite de 5 intentos por minuto; si lo superas responde 429."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Productos",
+      "item": [
+        {
+          "name": "Listar Productos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos" ]
+            }
+          }
+        },
+        {
+          "name": "Registrar Producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Producto creado (201)', function () { pm.response.to.have.status(201); });",
+                  "",
+                  "// Guarda el id para usarlo en Actualizar, Compra y Venta.",
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('idProducto', pm.response.json().idProducto);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreProducto\": \"Mascarilla N95\",\n  \"nroLote\": \"L2026-100\",\n  \"costo\": 2.50,\n  \"precioVenta\": 3.38\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos" ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Se actualizó el nombre', function () { pm.expect(pm.response.json().nombreProducto).to.eql('Mascarilla N95 (x2)'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreProducto\": \"Mascarilla N95 (x2)\",\n  \"nroLote\": \"L2026-100\",\n  \"costo\": 3.00,\n  \"precioVenta\": 4.05\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/{{idProducto}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos", "{{idProducto}}" ]
+            }
+          }
+        },
+        {
+          "name": "Registrar Producto inválido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Validación fallida (400)', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreProducto\": \"\",\n  \"nroLote\": \"\",\n  \"costo\": -1,\n  \"precioVenta\": -1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos" ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Kardex",
+      "item": [
+        {
+          "name": "Listar Kardex",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (501 si falta implementar el Kardex)', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kardex",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "kardex" ]
+            },
+            "description": "Un renglón por producto con su stock actual."
+          }
+        },
+        {
+          "name": "Movimientos de un producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kardex/{{idProducto}}/movimientos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "kardex", "{{idProducto}}", "movimientos" ]
+            },
+            "description": "Fecha, tipo de movimiento y cantidad (lo que muestra el modal de cada fila del Kardex)."
+          }
+        },
+        {
+          "name": "Stock de un producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (501 si falta implementar el stock)', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve un número', function () { pm.expect(pm.response.json()).to.be.a('number'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/kardex/{{idProducto}}/stock",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "kardex", "{{idProducto}}", "stock" ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Compras",
+      "item": [
+        {
+          "name": "Registrar Compra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Compra creada (201) (501 si falta implementar la lógica)', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    { \"idProducto\": {{idProducto}}, \"cantidad\": 10, \"precio\": 20.00 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "compras" ]
+            },
+            "description": "Varios productos por compra: agrega más objetos al arreglo `detalles`."
+          }
+        },
+        {
+          "name": "Listar Compras",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/compras",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "compras" ]
+            }
+          }
+        },
+        {
+          "name": "Registrar Compra inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Validación fallida (400)', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"detalles\": []\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "compras" ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Ventas",
+      "item": [
+        {
+          "name": "Registrar Venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Venta creada (201) (501 si falta implementar la lógica)', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    { \"idProducto\": {{idProducto}}, \"cantidad\": 2 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ventas",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "ventas" ]
+            },
+            "description": "El precio sale del PrecioVenta del producto. La cantidad no puede superar el stock disponible."
+          }
+        },
+        {
+          "name": "Listar Ventas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una lista', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ventas",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "ventas" ]
+            }
+          }
+        },
+        {
+          "name": "Registrar Venta inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Validación fallida (400)', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"detalles\": [ { \"idProducto\": 1, \"cantidad\": 0 } ]\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/ventas",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "ventas" ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Seguridad",
+      "item": [
+        {
+          "name": "Health del gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Gateway arriba (200)', function () { pm.response.to.have.status(200); });",
+                  "pm.test('No expone la cabecera Server', function () { pm.expect(pm.response.headers.has('Server')).to.be.false; });",
+                  "pm.test('Trae cabeceras de seguridad', function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff');",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.eql('DENY');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "health" ]
+            }
+          }
+        },
+        {
+          "name": "Listar Productos sin token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sin token no entra (401)', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos" ]
+            }
+          }
+        },
+        {
+          "name": "Listar Productos con token inválido (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Token inválido (401)', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [ { "key": "token", "value": "token.invalido.xyz", "type": "string" } ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "productos" ]
+            }
+          }
+        },
+        {
+          "name": "Movimientos no se expone por el gateway (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El endpoint interno no está publicado (404)', function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/movimientos",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "movimientos" ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
