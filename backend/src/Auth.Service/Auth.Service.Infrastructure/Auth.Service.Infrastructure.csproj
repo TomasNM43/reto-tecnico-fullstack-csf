@@ -2,6 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Auth.Service.Application\Auth.Service.Application.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 
   <PropertyGroup>
