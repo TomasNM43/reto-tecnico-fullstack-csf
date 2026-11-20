@@ -37,7 +37,8 @@ public class GlobalExceptionMiddleware
         {
             // Mientras la lógica de negocio esté pendiente, se avisa claramente.
             NotImplementedException => (HttpStatusCode.NotImplemented, "Lógica pendiente", "Esta operación aún no está implementada."),
-            ArgumentException or InvalidOperationException => (HttpStatusCode.BadRequest, "Solicitud inválida", ex.Message),
+            ReglaNegocioException => (HttpStatusCode.BadRequest, "Regla de negocio incumplida", ex.Message),
+            ArgumentException => (HttpStatusCode.BadRequest, "Solicitud inválida", ex.Message),
             KeyNotFoundException => (HttpStatusCode.NotFound, "No encontrado", ex.Message),
             _ => (HttpStatusCode.InternalServerError, "Error interno", "Ocurrió un error inesperado.")
         };

@@ -65,6 +65,25 @@ Toda la seguridad compartida vive en `BuildingBlocks` y cada servicio la activa 
 
 La clave del JWT en `appsettings.json` es solo para desarrollo; en un entorno real se cambia por una variable de entorno (`Jwt__Key`).
 
+## Login
+
+`Auth.Service` expone `POST /api/auth/login` con `{ "username": "...", "password": "..." }`. Si las credenciales son correctas devuelve el JWT (válido 30 minutos), su fecha de expiración y el rol. Si no, responde 401 con el mismo mensaje tanto para usuario inexistente como para clave incorrecta. Este endpoint tiene un límite de 5 intentos por minuto.
+
+La cadena de conexión está en `ConnectionStrings:Default` del `appsettings.json` del servicio. Si ya tienes otro PostgreSQL en el puerto 5432, cámbiala con la variable de entorno `ConnectionStrings__Default`.
+
+## Productos, movimientos y Kardex
+
+`Productos.Service` (puerto 5102 en desarrollo) maneja el catálogo: `GET/POST /api/productos`, `GET/PUT /api/productos/{id}`.
+
+`Movimientos.Service` (puerto 5103) guarda los movimientos de inventario y arma el Kardex:
+
+- `POST /api/movimientos`: registra un movimiento (Entrada = 1, Salida = 2) con su detalle. Lo usan Compras y Ventas.
+- `GET /api/kardex`: tabla del Kardex con el stock actual de cada producto.
+- `GET /api/kardex/{idProducto}/movimientos`: movimientos de un producto.
+- `GET /api/kardex/{idProducto}/stock`: stock actual de un producto.
+
+Movimientos consulta a Productos por HTTP a través de una Facade (`IProductosFacade`) y reenvía el JWT del usuario. La URL está en `Services:Productos` del `appsettings.json`.
+
 ## Compilar el backend
 
 ```powershell

@@ -1,9 +1,11 @@
 using BuildingBlocks;
+using Movimientos.Service.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Registro de servicios en el contenedor de dependencias.
 builder.Services.AddControllers();
+builder.Services.AddMovimientosServices(builder.Configuration);
 builder.AddBuildingBlocks("Movimientos Service");
 
 var app = builder.Build();
